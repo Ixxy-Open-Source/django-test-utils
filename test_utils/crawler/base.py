@@ -5,6 +5,7 @@ import urlparse
 
 from django.conf import settings
 from django.db import transaction
+from django.db.transaction import set_autocommit, rollback
 from django.views.debug import cleanse_setting
 from django.test.client import Client
 from django.test.utils import setup_test_environment, teardown_test_environment
@@ -127,7 +128,7 @@ class Crawler(object):
         request_dict = dict(urlparse.parse_qsl(parsed.query))
         url_path = parsed.path
 
-        #url_path now contains the path, request_dict contains get params
+        # url_path now contains the path, request_dict contains get params
 
         LOG.debug("%s: link to %s with parameters %s", from_url, to_url, request_dict)
 
@@ -175,12 +176,12 @@ class Crawler(object):
         self.c.get(*self.not_crawled[0][-1])
 
         while self.not_crawled:
-            #Take top off not_crawled and evaluate it
+            # Take top off not_crawled and evaluate it
             current_depth, from_url, to_url = self.not_crawled.pop(0)
             if current_depth > max_depth:
                 continue
 
-            transaction.enter_transaction_management()
+            set_autocommit(False)
             try:
                 resp, returned_urls = self.get_url(from_url, to_url)
             except HTMLParseError, e:
@@ -189,10 +190,11 @@ class Crawler(object):
                 LOG.exception("%s had unhandled exception: %s", to_url, e)
                 continue
             finally:
-                transaction.rollback()
+                rollback()
+            set_autocommit(True)
 
             self.crawled[to_url] = True
-            #Find its links that haven't been crawled
+            # Find its links that haven't been crawled
             for base_url in returned_urls:
                 if not self.ascend and not base_url.startswith(self.base_url):
                     LOG.debug("Skipping %s - outside scope of %s", base_url, self.base_url)

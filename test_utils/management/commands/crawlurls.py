@@ -72,7 +72,7 @@ class Command(BaseCommand):
         else:
             start_url = args[0] if args else '/'
 
-        if settings.ADMIN_FOR:
+        if getattr(settings, 'ADMIN_FOR', False):
             settings_modules = [__import__(m, {}, {}, ['']) for m in settings.ADMIN_FOR]
         else:
             settings_modules = [settings]
@@ -88,8 +88,8 @@ class Command(BaseCommand):
                 continue
 
             view_functions = extract_views_from_urlpatterns(urlconf.urlpatterns)
-            for (func, regex) in view_functions:
-                #Get function name and add it to the hash of URLConf urls
+            for (func, regex) in (x[:2] for x in view_functions):
+                # Get function name and add it to the hash of URLConf urls
                 func_name = hasattr(func, '__name__') and func.__name__ or repr(func)
                 conf_urls[regex] = ['func.__module__', func_name]
 
