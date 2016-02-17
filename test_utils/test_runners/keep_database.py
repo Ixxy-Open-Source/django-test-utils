@@ -1,5 +1,5 @@
 from django.test import TestCase
-from django.test.simple import build_test, reorder_suite, build_suite
+from django.test.runner import reorder_suite
 from django.test.utils import setup_test_environment, teardown_test_environment
 from django.test.testcases import connections_support_transactions
 from django.db.models import get_app, get_apps
